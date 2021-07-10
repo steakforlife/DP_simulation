@@ -24,7 +24,7 @@ class Graph:
         #remove illegal edges based on constraints
         for v1,v2,sickness,SINR,edgeLength in self.graph:
             if SINR>SINR_Constraint:
-                  #self.graph.sickness=float("Inf")
+                  #self.graph.sickness=float("Inf") ㄖ 
                   self.graph.remove([v1,v2,sickness,SINR,edgeLength])
                   self.graph.append([v1,v2,float("Inf"),SINR,edgeLength])
         #initialize
