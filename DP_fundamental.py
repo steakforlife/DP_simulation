@@ -1,4 +1,4 @@
-
+#SINR_mapping
 import networkx as nx
 import numpy as np
 from numpy.core.numeric import NaN
@@ -84,7 +84,6 @@ class Graph:
                 #         Distance=Distance-edgeLength
                 #         Parent[v2]=v1
                 #============================================================================
-
         #self.printArr(Qfunction)
         self.printPath(Parent,src,dst)
         # print(costFunction.shape)
@@ -110,7 +109,14 @@ class Graph:
             
     #SINR configuration
     def SINR_mapping(self,state):
-        return
+        #Edge(self,v1,v2,sickness,SINR,edgeLength):
+        #state==v2
+        #g.M[str(state)][]
+        #M={'0'#location: (10,2,3,4,5)#SINR values
+        for edges in self.graph:
+            v2=edges[1]
+            edges[3]=self.M[str(state)][v2]
+        #print("the updated edges are: {0}".format(self.graph))
 
     #calculate SINR penalty
     def penalty(self,location,IRSnow,SINR_Constraint):
@@ -137,6 +143,7 @@ g.addEdge(1, 4, 2, 2, 5)
 g.addEdge(2, 3, 3, 0.5, 5)
 #g.addEdge(3, 1, 1, 3, 5)
 g.addEdge(3, 4, 3, 1, 5)
+#v1,v2,sickness,SINR,edgeLength
 g.M={'0': (10,2,3,4,5),'1': (2,10,6,5,4),'2': (1,4,10,6,4),'3': (2,2,4,10,3),'4': (1,3,3,5,10)}
 
 g.fundamentalAlgo(0,4)
@@ -146,4 +153,6 @@ test=np.array([[1.234, 2.345, 4.543],[0.34, 12.545, -4.543]])
 test=np.zeros((5,5))
 test[2]=[1.234, 2.345, 4.543,0,0]
 test[3]=[0.34, 12.545, -4.543,0,0]
-
+# test=2
+# print(g.M[str(test)][v2])
+#test SINR mapping
