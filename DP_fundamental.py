@@ -3,7 +3,7 @@ import networkx as nx
 import numpy as np
 from numpy.core.numeric import NaN
 #Input parameter
-SINR_Constraint=5.0
+SINR_Constraint=8
 D=100
 Lambda=3
 destination=20
@@ -67,7 +67,7 @@ class Graph:
                 rho[v2]=np.argmin(costFunction[v2],axis=0)
                 if(rho[v2]==v2):
                     #=========================update IRS==============================================
-                    self.SINR_mapping(rho[v2])
+                    self.SINR_mapping(int(rho[v2]))
                 #costFunction[v2][int(rho[v2])]=min(costFunction[v2])
 
                 #=======================old =====================================================
@@ -120,10 +120,6 @@ class Graph:
 
     #calculate SINR penalty
     def penalty(self,location,IRSnow,SINR_Constraint):
-        #SINR=self.M.get(str(location))
-        # if(SINR-SINR_Constraint<0):
-        #     return abs(SINR-SINR_Constraint)
-        # else:
         SINR=self.M[str(IRSnow)][location]
         if(SINR-SINR_Constraint<0):
             return abs(SINR-SINR_Constraint)
@@ -140,13 +136,14 @@ class Graph:
 #==================input===============================
 g = Graph(5)
 g.addEdge(0, 1, 1, 2, 5)
-g.addEdge(0, 2, 2, 5, 5)
+g.addEdge(0, 2, 4, 5, 5)
 g.addEdge(1, 2, 3, 3, 5)
 g.addEdge(1, 3, 2, 6, 5)
 g.addEdge(1, 4, 2, 2, 5)
 g.addEdge(2, 3, 3, 0.5, 5)
 #g.addEdge(3, 1, 1, 3, 5)
 g.addEdge(3, 4, 3, 1, 5)
+g.addEdge(0, 4, 10, 8, 5)
 #v1,v2,sickness,SINR,edgeLength
 g.M={'0': (10,2,3,4,5),'1': (2,10,6,5,4),'2': (1,4,10,6,4),'3': (2,2,4,10,3),'4': (1,3,3,5,10)}
 
