@@ -124,6 +124,10 @@ class Graph:
         # if(SINR-SINR_Constraint<0):
         #     return abs(SINR-SINR_Constraint)
         # else:
+        SINR=self.M[str(IRSnow)][location]
+        if(SINR-SINR_Constraint<0):
+            return abs(SINR-SINR_Constraint)
+        else:
             return 0
 
     #calcculate the distance with obstacles
