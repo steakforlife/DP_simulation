@@ -53,7 +53,6 @@ class Graph:
             for v1,v2,sickness,SINR,edgeLength in self.graph:
                 #from 0 to v1
                 for x in range(v1+1):
-
                     if (costFunction[v1][x]+sickness+\
                     self.penalty(v2,x,SINR_Constraint)<costFunction[v2][x]):
                         costFunction[v2][x]=costFunction[v1][x]+sickness+\
@@ -70,20 +69,6 @@ class Graph:
                     self.SINR_mapping(int(rho[v2]))
                 #costFunction[v2][int(rho[v2])]=min(costFunction[v2])
 
-                #=======================old =====================================================
-                # if Qfunction[v1] != float("Inf") and Qfunction[v1]+sickness<Qfunction[v2]:
-                #     if Distance-edgeLength>0:
-                #         if rhoOld==0 and SINR<SINR_Constraint:
-                #             #===========
-                #             #update IRS
-                #             #===========
-                #             rhoOld=1
-                #         elif rhoOld!=0:
-                #             rhoOld=0 if rhoOld==Lambda else rhoOld+1
-                #         Qfunction[v2]=Qfunction[v1]+sickness+self.penalty(SINR,SINR_Constraint)
-                #         Distance=Distance-edgeLength
-                #         Parent[v2]=v1
-                #============================================================================
         #self.printArr(Qfunction)
         self.printPath(Parent,src,dst)
         # print(costFunction.shape)
