@@ -1,4 +1,5 @@
 #SINR_mapping
+from math import cos
 import networkx as nx
 import numpy as np
 from numpy.core.numeric import NaN
@@ -51,8 +52,9 @@ class Graph:
         #           self.graph.remove([v1,v2,sickness,SINR,edgeLength,MRC])
         #           self.graph.append([v1,v2,float("Inf"),SINR,edgeLength])
         #initialize
-        Qfunction=[float("Inf")]*self.V
-        Qfunction[src]=0
+        Qfunction=np.zeros((self.V+1,self.V+1))
+        Qfunction[:][:]=float("Inf")
+        Qfunction[src][:]=0
         #
         costFunction=np.zeros((self.V+1,self.V+1))
         costFunction[:][:]=float("Inf")
@@ -60,16 +62,25 @@ class Graph:
         #
         PathLength=[float("Inf")]*self.V
         PathLength[src]=0
+        # PathLength=np.zeros((self.V+1,self.V+1))
+        # PathLength[:][:]=float("Inf")
+        # PathLength[src][:]=0
         #
         RETmagnitude=[float("Inf")]*self.V
         RETmagnitude[src]=0
+        # RETmagnitude=np.zeros((self.V+1,self.V+1))
+        # RETmagnitude[:][:]=float("Inf")
+        # RETmagnitude[src][:]=0
         #
         AccumulatedSINR=[float("Inf")]*self.V
         AccumulatedSINR[src]=0
+        # AccumulatedSINR=np.zeros((self.V+1,self.V+1))
+        # AccumulatedSINR[:][:]=float("Inf")
+        # AccumulatedSINR[src][:]=0
         #
         Distance=D
         rho=np.zeros(self.V)
-        rhoOld=0
+        rhoLast=-1
         Parent={}
         Parent[src]=-1
         #
@@ -82,34 +93,65 @@ class Graph:
                 for x in range(v1+1):
                     if (costFunction[v1][x]+sickness+\
                     self.penalty(v2,x,SINR_Constraint)<costFunction[v2][x]):
+                        print("(v1,v2): ",v1,v2)
+                        print("x: ",x)
                         costFunction[v2][x]=costFunction[v1][x]+sickness+\
                         self.penalty(v2,x,SINR_Constraint)-AdaptionSpeed
-
-                        Qfunction[v2]=Qfunction[v1]+sickness-AdaptionSpeed
-                        PathLength[v2]=PathLength[v1]+edgeLength
-                        RETmagnitude[v2]=RETmagnitude[v1]+MRC
-                        AccumulatedSINR[v2]=AccumulatedSINR[v1]+SINR
-                        Parent[v2]=v1
+                        print("costfunction[{0}][{1}]= ".format(v2,x),costFunction[v2][x])
+                        Qfunction[v2][x]=Qfunction[v1][x]+sickness-AdaptionSpeed
+                        PathLength[v2][x]=PathLength[v1][x]+edgeLength
+                        RETmagnitude[v2][x]=RETmagnitude[v1][x]+MRC
+                        AccumulatedSINR[v2][x]=AccumulatedSINR[v1][x]+SINR
+                        if(costFunction[v2][x]==min(costFunction[v2][:])):
+                            Parent[v2]=v1
                 #from 0 to i+1-lamda 
-                for i in range(1+v1+1-Lambda):
-                    if(costFunction[v1][i]+sickness<costFunction[v2][v1+1]):
-                        costFunction[v2][v1+1]=costFunction[v1][i]+sickness-AdaptionSpeed
-
-                        Qfunction[v2]=Qfunction[v1]+sickness-AdaptionSpeed
-                        PathLength[v2]=PathLength[v1]+edgeLength
-                        RETmagnitude[v2]=RETmagnitude[v1]+MRC
-                        Parent[v2]=v1
+                if(v2-Lambda<0):
+                    for i in range(v2):
+                        if(costFunction[v1][i]+sickness<costFunction[v2][v2]):
+                            print("(v1,i): ",v1,i)
+                            costFunction[v2][v2]=costFunction[v1][i]+sickness-AdaptionSpeed
+                            Qfunction[v2][v2]=Qfunction[v1][i]+sickness-AdaptionSpeed
+                            PathLength[v2][v2]=PathLength[v1][i]+edgeLength
+                            RETmagnitude[v2][v2]=RETmagnitude[v1][i]+MRC
+                            if(costFunction[v2][v2]==min(costFunction[v2][:])):
+                                Parent[v2]=v1
+                            print("costfunction[{0}][{1}]: ".format(v2,v2),costFunction[v2][v2])
+                else:
+                    for i in range(1+v1+1-Lambda):
+                        # if(costFunction[v1][i]+sickness<costFunction[v2][v1+1]):
+                        #     costFunction[v2][v1+1]=costFunction[v1][i]+sickness-AdaptionSpeed
+                        if(costFunction[v1][i]+sickness<costFunction[v2][v2]):
+                            print("(v1,i): ",v1,i)
+                            costFunction[v2][v2]=costFunction[v1][i]+sickness-AdaptionSpeed
+                            Qfunction[v2][v2]=Qfunction[v1][i]+sickness-AdaptionSpeed
+                            PathLength[v2][v2]=PathLength[v1][i]+edgeLength
+                            RETmagnitude[v2][v2]=RETmagnitude[v1][i]+MRC
+                            if(costFunction[v2][v2]==min(costFunction[v2][:])):
+                                Parent[v2]=v1
+                            print("costfunction[{0}][{1}]: ".format(v2,v2),costFunction[v2][v2])
+                
                 rho[v2]=np.argmin(costFunction[v2],axis=0)
                 if(rho[v2]==v2):
-                    #=========================update IRS==============================================
-                    self.SINR_mapping(int(rho[v2]))
-                    AccumulatedSINR[v2]=AccumulatedSINR[v1]+SINR
+                    if(rhoLast==-1):
+                        #=========================update IRS==============================================
+                        self.SINR_mapping(int(rho[v2]))
+                        AccumulatedSINR[v2][v2]=AccumulatedSINR[v1][v2]+SINR
+                        rhoLast+=1
+                    elif(rho[v2]-rhoLast>Lambda):
+                        #=========================update IRS==============================================
+                        self.SINR_mapping(int(rho[v2]))
+                        AccumulatedSINR[v2][v2]=AccumulatedSINR[v1][v2]+SINR
+                        rhoLast+=1
                 #costFunction[v2][int(rho[v2])]=min(costFunction[v2])
 
         #self.printArr(Qfunction)
         self.printPath(Parent,src,dst)
-        print("costfunction: ",costFunction[dst][int(rho[dst])])
-        print("Qfunction: ",Qfunction[dst])
+        print("costfunction[{0}][{1}]: ".format(dst,rho[dst]),costFunction[dst][int(rho[dst])])
+        for i in range(dst+1):
+            print(rho[i])
+        for i in range(dst+1):
+            print("Parent[{0}]= {1}".format(i,Parent[i]))
+        print("Qfunction: ",Qfunction[dst][int(rho[dst])])
         print("TotalPathlength: ",PathLength[dst])
         print("RET magnitude: ",RETmagnitude[dst])
         print("Accumulated SINR: ",AccumulatedSINR[dst])
@@ -134,7 +176,8 @@ class Graph:
             pi=parent[pi]
             count+=1
             if count>dst:
-                print("no optimal path")        
+                print("no optimal path")   
+        print("\n")     
             
     #SINR configuration
     def SINR_mapping(self,state):
@@ -151,7 +194,8 @@ class Graph:
     def penalty(self,location,IRSnow,SINR_Constraint):
         SINR=self.M[str(IRSnow)][location]
         if(SINR-SINR_Constraint<0):
-            return abs(SINR-SINR_Constraint)
+            #print("penalty= ",abs(SINR-SINR_Constraint))
+            return abs(SINR-SINR_Constraint)     
         else:
             return 0
 
@@ -166,9 +210,19 @@ class Graph:
 GraphSize=5
 NumberofObstacle=0
 AdaptionSpeed=0
-Lambda=4
+Lambda=2
 g = Graph(GraphSize)
 #v1,v2,sickness,SINR,edgeLength,MRC 
+# g.addEdge(0, 1, 1, 8, 1, 4)
+# g.addEdge(0, 2, 4, 5, 3, 2)
+# g.addEdge(1, 2, 1, 8, 2, 3)
+# g.addEdge(1, 3, 2, 6, 4, 4)
+# g.addEdge(1, 4, 2, 2, 3, 5)
+# g.addEdge(2, 3, 3, 8, 5, 6)
+# g.addEdge(3, 1, 1, 3, 5, 0)
+# g.addEdge(3, 4, 3, 8, 5, 8)
+# g.addEdge(0, 4, 10, 1, 5, 0)
+#===================================
 g.addEdge(0, 1, 1, 2, 5, 4)
 g.addEdge(0, 2, 4, 5, 5, 2)
 g.addEdge(1, 2, 3, 3, 5, 3)
@@ -178,9 +232,10 @@ g.addEdge(2, 3, 3, 0.5, 5, 6)
 #g.addEdge(3, 1, 1, 3, 5)
 g.addEdge(3, 4, 3, 1, 5, 8)
 g.addEdge(0, 4, 10, 8, 5, 0)
-g.M={'0': (10,2,3,4,5),'1': (2,10,6,5,4),'2': (1,4,10,6,4),'3': (2,2,4,10,3),'4': (1,3,3,5,10)}
+g.M={'0': (10,2,3,4,1),'1': (2,10,6,5,4),'2': (1,4,10,6,4),'3': (2,2,4,10,3),'4': (1,3,3,5,10)}
 g.Obstacle=random.sample(range(1,GraphSize-1),NumberofObstacle)
 g.fundamentalAlgo(0,4)
+print()
 test_rho=np.zeros(5)
 test=np.array([[1.234, 2.345, 4.543],[0.34, 12.545, -4.543]])
 test=np.zeros((5,5))
