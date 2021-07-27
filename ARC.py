@@ -54,9 +54,11 @@ class Graph:
         Qfunction=[float("Inf")]*self.V
         Qfunction[src]=0
         #
-        costFunction=np.zeros((self.V+1,self.V+1))
-        costFunction[:][:]=float("Inf")
-        costFunction[src][:]=0
+        # costFunction=np.zeros((self.V+1,self.V+1))
+        # costFunction[:][:]=float("Inf")
+        # costFunction[src][:]=0
+        costFunction=[float("Inf")]*self.V
+        costFunction[src]=0
         #
         PathLength=[float("Inf")]*self.V
         PathLength[src]=0
@@ -83,9 +85,9 @@ class Graph:
                 #from 0 to v1
                 #for x in range(v1+1):
                 if (Qfunction[v1]+sickness<Qfunction[v2]):
-                    costFunction[v2][x]=costFunction[v1][x]+sickness+\
+                    costFunction[v2]=costFunction[v1]+sickness+\
                     self.penalty(v2,x,SINR_Constraint)-AdaptionSpeed
-
+ 
                     Qfunction[v2]=Qfunction[v1]+sickness-AdaptionSpeed
                     PathLength[v2]=PathLength[v1]+edgeLength
                     RETmagnitude[v2]=RETmagnitude[v1]+MRC
@@ -106,14 +108,22 @@ class Graph:
                 #     self.SINR_mapping(int(rho[v2]))
                 #     AccumulatedSINR[v2]=AccumulatedSINR[v1]+SINR
                 #costFunction[v2][int(rho[v2])]=min(costFunction[v2])
-                    count+=1
-                if(count==Lambda):
-                    self.SINR_mapping(v2)
-                    x=v2
+                    #count+=1
+                
+                # if(count==Lambda):
+                #     self.SINR_mapping(v2)
+                #     print("v2=",v2)
+                #     AccumulatedSINR[v2]=AccumulatedSINR[v1]+self.M[str(v2)][v2]
+                #     x=v2
+                #     rho[v2]=v2
+                #     count=0
+                # else:
+                #     count+=1
+                #     AccumulatedSINR[v2]=AccumulatedSINR[v1]+SINR
 
         #self.printArr(Qfunction)
         self.printPath(Parent,src,dst)
-        print("costfunction: ",costFunction[dst][int(rho[dst])])
+        print("costfunction: ",costFunction[dst])
         print("Qfunction: ",Qfunction[dst])
         print("TotalPathlength: ",PathLength[dst])
         print("RET magnitude: ",RETmagnitude[dst])

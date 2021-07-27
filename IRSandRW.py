@@ -54,9 +54,11 @@ class Graph:
         Qfunction=[float("Inf")]*self.V
         Qfunction[src]=0
         #
-        costFunction=np.zeros((self.V+1,self.V+1))
-        costFunction[:][:]=float("Inf")
-        costFunction[src][:]=0
+        # costFunction=np.zeros((self.V+1,self.V+1))
+        # costFunction[:][:]=float("Inf")
+        # costFunction[src][:]=0
+        costFunction=[float("Inf")]*self.V
+        costFunction[src]=0
         #
         PathLength=[float("Inf")]*self.V
         PathLength[src]=0
@@ -78,23 +80,34 @@ class Graph:
         #
         x=0
         count=0
-        for _ in range(self.V-1):
-            for v1,v2,sickness,SINR,edgeLength,MRC in self.graph:
-                #
-                if (costFunction[v1][x]+sickness+\
-                self.penalty(v2,x,SINR_Constraint)<costFunction[v2][x]):
-                    costFunction[v2][x]=costFunction[v1][x]+sickness+\
-                    self.penalty(v2,x,SINR_Constraint)-AdaptionSpeed
-
-                    Qfunction[v2]=Qfunction[v1]+sickness-AdaptionSpeed
-                    PathLength[v2]=PathLength[v1]+edgeLength
-                    RETmagnitude[v2]=RETmagnitude[v1]+MRC
-                    AccumulatedSINR[v2]=AccumulatedSINR[v1]+SINR
-                    Parent[v2]=v1
-                    count+=1
+        #for _ in range(self.V-1):
+        # for v1,v2,sickness,SINR,edgeLength,MRC in self.graph:
+        #     if (costFunction[v1][x]+sickness+self.penalty(v2,x,SINR_Constraint)<costFunction[v2][x]):
+        #         costFunction[v2][x]=costFunction[v1][x]+sickness+self.penalty(v2,x,SINR_Constraint)-AdaptionSpeed
+        #         Parent[v2]=v1
+        #         PathLength[v2]=PathLength[v1]+edgeLength
+        #         RETmagnitude[v2]=RETmagnitude[v1]+MRC
+        #         Qfunction[v2]=Qfunction[v1]+sickness-AdaptionSpeed
+        #         AccumulatedSINR[v2]=AccumulatedSINR[v1]+SINR
+        #         if(costFunction[v2][x]==min(costFunction[v2][:])):
+        for v1,v2,sickness,SINR,edgeLength,MRC in self.graph:
+            if(costFunction[v1]+sickness+self.penalty(v2,x,SINR_Constraint)<costFunction[v2]):
+                costFunction[v2]=costFunction[v1]+sickness+self.penalty(v2,x,SINR_Constraint)-AdaptionSpeed
+                Parent[v2]=v1
+                PathLength[v2]=PathLength[v1]+edgeLength
+                RETmagnitude[v2]=RETmagnitude[v1]+MRC
+                Qfunction[v2]=Qfunction[v1]+sickness-AdaptionSpeed
                 if(count==Lambda):
+                #print("Lambda= ",Lambda)
                     self.SINR_mapping(v2)
+                    #print("v2= ",v2)
+                    AccumulatedSINR[v2]=AccumulatedSINR[v1]+self.M[str(v2)][v2]
                     x=v2
+                    rho[v2]=v2
+                    count=0
+                else:
+                    AccumulatedSINR[v2]=AccumulatedSINR[v1]+SINR
+                    count+=1
                 # rho[v2]=np.argmin(costFunction[v2],axis=0)
                 # if(rho[v2]==v2):
                 #     #=========================update IRS==============================================
@@ -104,7 +117,7 @@ class Graph:
 
         #self.printArr(Qfunction)
         self.printPath(Parent,src,dst)
-        print("costfunction: ",costFunction[dst][int(rho[dst])])
+        print("costfunction: ",costFunction[dst])
         print("Qfunction: ",Qfunction[dst])
         print("TotalPathlength: ",PathLength[dst])
         print("RET magnitude: ",RETmagnitude[dst])
@@ -130,7 +143,7 @@ class Graph:
             pi=parent[pi]
             count+=1
             if count>dst:
-                print("no optimal path")        
+                print("no optimal path")       
             
     #SINR configuration
     def SINR_mapping(self,state):
@@ -162,7 +175,7 @@ class Graph:
 GraphSize=5
 NumberofObstacle=0
 AdaptionSpeed=0
-Lambda=4
+Lambda=2
 g = Graph(GraphSize)
 #v1,v2,sickness,SINR,edgeLength,MRC 
 g.addEdge(0, 1, 1, 2, 5, 4)

@@ -99,6 +99,7 @@ class Graph:
                         AccumulatedSINR[v2]=AccumulatedSINR[v1]+self.M[str(v2)][v2]
                         x=v2
                         rho[v2]=v2
+                        count=0
         #self.printArr(Qfunction)
         self.printPath(Parent,src,dst)
         print("costfunction: ",costFunction[dst][int(rho[dst])])
