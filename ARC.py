@@ -3,14 +3,10 @@ import networkx as nx
 import numpy as np
 from numpy.core.numeric import NaN
 import random
+import setting
 #Input parameter
-SINR_Constraint=8
-D=100
-Lambda=3
-destination=20
-AdaptionSpeed=1
-UpperBoundMRC=10
-class Graph:
+
+class GraphARC:
 
     def __init__(self,vertices):
         self.V=vertices
@@ -43,7 +39,7 @@ class Graph:
     #def constructGraph(self,)
     #main function to find the path from src to dst
     #with minimum accumulated sickness
-    def fundamentalAlgo(self,src,dst):
+    def ARC(self,src,dst):
         #remove illegal edges based on constraints
         # for v1,v2,sickness,SINR,edgeLength,MRC in self.graph:
         #     if SINR>SINR_Constraint:
@@ -69,14 +65,14 @@ class Graph:
         AccumulatedSINR=[float("Inf")]*self.V
         AccumulatedSINR[src]=0
         #
-        Distance=D
+        #Distance=D
         rho=np.zeros(self.V)
         rhoOld=0
         Parent={}
         Parent[src]=-1
         #
         self.obstacleAvoidance(self.Obstacle)
-        self.upperbound(UpperBoundMRC)
+        self.upperbound(setting.UpperBoundMRC)
         #
         x=0
         count=0
@@ -86,9 +82,9 @@ class Graph:
                 #for x in range(v1+1):
                 if (Qfunction[v1]+sickness<Qfunction[v2]):
                     costFunction[v2]=costFunction[v1]+sickness+\
-                    self.penalty(v2,x,SINR_Constraint)-AdaptionSpeed
+                    self.penalty(v2,x,setting.SINR_Constraint)-setting.AdaptionSpeed
  
-                    Qfunction[v2]=Qfunction[v1]+sickness-AdaptionSpeed
+                    Qfunction[v2]=Qfunction[v1]+sickness-setting.AdaptionSpeed
                     PathLength[v2]=PathLength[v1]+edgeLength
                     RETmagnitude[v2]=RETmagnitude[v1]+MRC
                     AccumulatedSINR[v2]=AccumulatedSINR[v1]+SINR
@@ -129,9 +125,13 @@ class Graph:
         print("RET magnitude: ",RETmagnitude[dst])
         print("Accumulated SINR: ",AccumulatedSINR[dst])
 
-        # print(costFunction.shape)
-        # print("cost[src][1]= ",costFunction[src][1])
-        # print("cost[3][4]= ",costFunction[3][4])
+        #======for plot==================================
+        setting.CostARC.append(costFunction[dst])
+        setting.QfuncARC.append(Qfunction[dst])
+        setting.PathARC.append(PathLength[dst])
+        setting.MRC_ARC.append(RETmagnitude[dst])
+        setting.SINR_ARC.append(AccumulatedSINR[dst])
+        #================================================
 
     def printArr(self,dist):
         print("Vertex Distance from source")
@@ -178,24 +178,24 @@ class Graph:
 
 
 #==================input===============================
-GraphSize=5
-NumberofObstacle=0
-AdaptionSpeed=0
-Lambda=4
-g = Graph(GraphSize)
+# GraphSize=5
+# NumberofObstacle=0
+# AdaptionSpeed=0
+# Lambda=4
+# g = GraphARC(GraphSize)
 #v1,v2,sickness,SINR,edgeLength,MRC 
-g.addEdge(0, 1, 1, 2, 5, 4)
-g.addEdge(0, 2, 4, 5, 5, 2)
-g.addEdge(1, 2, 3, 3, 5, 3)
-g.addEdge(1, 3, 2, 6, 5, 4)
-g.addEdge(1, 4, 2, 2, 5, 5)
-g.addEdge(2, 3, 3, 0.5, 5, 6)
-#g.addEdge(3, 1, 1, 3, 5)
-g.addEdge(3, 4, 3, 1, 5, 8)
-g.addEdge(0, 4, 10, 8, 5, 0)
-g.M={'0': (10,2,3,4,5),'1': (2,10,6,5,4),'2': (1,4,10,6,4),'3': (2,2,4,10,3),'4': (1,3,3,5,10)}
-g.Obstacle=random.sample(range(1,GraphSize-1),NumberofObstacle)
-g.fundamentalAlgo(0,4)
+# g.addEdge(0, 1, 1, 2, 5, 4)
+# g.addEdge(0, 2, 4, 5, 5, 2)
+# g.addEdge(1, 2, 3, 3, 5, 3)
+# g.addEdge(1, 3, 2, 6, 5, 4)
+# g.addEdge(1, 4, 2, 2, 5, 5)
+# g.addEdge(2, 3, 3, 0.5, 5, 6)
+# #g.addEdge(3, 1, 1, 3, 5)
+# g.addEdge(3, 4, 3, 1, 5, 8)
+# g.addEdge(0, 4, 10, 8, 5, 0)
+# g.M={'0': (10,2,3,4,5),'1': (2,10,6,5,4),'2': (1,4,10,6,4),'3': (2,2,4,10,3),'4': (1,3,3,5,10)}
+# g.Obstacle=random.sample(range(1,GraphSize-1),NumberofObstacle)
+#g.ARC(0,4)
 test_rho=np.zeros(5)
 test=np.array([[1.234, 2.345, 4.543],[0.34, 12.545, -4.543]])
 test=np.zeros((5,5))

@@ -3,14 +3,15 @@ import networkx as nx
 import numpy as np
 from numpy.core.numeric import NaN
 import random
+import setting
 #Input parameter
-SINR_Constraint=8
-D=100
-Lambda=3
-destination=20
-AdaptionSpeed=1
-UpperBoundMRC=10
-class Graph:
+# SINR_Constraint=8
+# D=100
+# Lambda=3
+# destination=20
+# AdaptionSpeed=1
+# UpperBoundMRC=10
+class GraphIRSandRW:
 
     def __init__(self,vertices):
         self.V=vertices
@@ -43,7 +44,7 @@ class Graph:
     #def constructGraph(self,)
     #main function to find the path from src to dst
     #with minimum accumulated sickness
-    def fundamentalAlgo(self,src,dst):
+    def IRSandRW(self,src,dst):
         #remove illegal edges based on constraints
         # for v1,v2,sickness,SINR,edgeLength,MRC in self.graph:
         #     if SINR>SINR_Constraint:
@@ -69,14 +70,14 @@ class Graph:
         AccumulatedSINR=[float("Inf")]*self.V
         AccumulatedSINR[src]=0
         #
-        Distance=D
+        #Distance=D
         rho=np.zeros(self.V)
         rhoOld=0
         Parent={}
         Parent[src]=-1
         #
         self.obstacleAvoidance(self.Obstacle)
-        self.upperbound(UpperBoundMRC)
+        self.upperbound(setting.UpperBoundMRC)
         #
         x=0
         count=0
@@ -91,15 +92,15 @@ class Graph:
         #         AccumulatedSINR[v2]=AccumulatedSINR[v1]+SINR
         #         if(costFunction[v2][x]==min(costFunction[v2][:])):
         for v1,v2,sickness,SINR,edgeLength,MRC in self.graph:
-            if(costFunction[v1]+sickness+self.penalty(v2,x,SINR_Constraint)<costFunction[v2]):
-                costFunction[v2]=costFunction[v1]+sickness+self.penalty(v2,x,SINR_Constraint)-AdaptionSpeed
+            if(costFunction[v1]+sickness+self.penalty(v2,x,setting.SINR_Constraint)<costFunction[v2]):
+                costFunction[v2]=costFunction[v1]+sickness+self.penalty(v2,x,setting.SINR_Constraint)-setting.AdaptionSpeed
                 Parent[v2]=v1
                 PathLength[v2]=PathLength[v1]+edgeLength
                 RETmagnitude[v2]=RETmagnitude[v1]+MRC
-                Qfunction[v2]=Qfunction[v1]+sickness-AdaptionSpeed
-                if(count==Lambda):
+                Qfunction[v2]=Qfunction[v1]+sickness-setting.AdaptionSpeed
+                if(count==setting.Lambda):
                 #print("Lambda= ",Lambda)
-                    self.SINR_mapping(v2)
+                    self.SINR_mapping_IRSandRW(v2)
                     #print("v2= ",v2)
                     AccumulatedSINR[v2]=AccumulatedSINR[v1]+self.M[str(v2)][v2]
                     x=v2
@@ -111,7 +112,7 @@ class Graph:
                 # rho[v2]=np.argmin(costFunction[v2],axis=0)
                 # if(rho[v2]==v2):
                 #     #=========================update IRS==============================================
-                #     self.SINR_mapping(int(rho[v2]))
+                #     self.SINR_mapping_IRSandRW(int(rho[v2]))
                 #     AccumulatedSINR[v2]=AccumulatedSINR[v1]+SINR
                 # #costFunction[v2][int(rho[v2])]=min(costFunction[v2])
 
@@ -123,9 +124,13 @@ class Graph:
         print("RET magnitude: ",RETmagnitude[dst])
         print("Accumulated SINR: ",AccumulatedSINR[dst])
 
-        # print(costFunction.shape)
-        # print("cost[src][1]= ",costFunction[src][1])
-        # print("cost[3][4]= ",costFunction[3][4])
+        #======for plot==================================
+        setting.CostInR.append(costFunction[dst])
+        setting.QfuncInR.append(Qfunction[dst])
+        setting.PathInR.append(PathLength[dst])
+        setting.MRC_InR.append(RETmagnitude[dst])
+        setting.SINR_InR.append(AccumulatedSINR[dst])
+        #================================================
 
     def printArr(self,dist):
         print("Vertex Distance from source")
@@ -146,7 +151,7 @@ class Graph:
                 print("no optimal path")       
             
     #SINR configuration
-    def SINR_mapping(self,state):
+    def SINR_mapping_IRSandRW(self,state):
         #Edge(self,v1,v2,sickness,SINR,edgeLength,MRC):
         #state==v2
         #g.M[str(state)][]
@@ -172,24 +177,24 @@ class Graph:
 
 
 #==================input===============================
-GraphSize=5
-NumberofObstacle=0
-AdaptionSpeed=0
-Lambda=2
-g = Graph(GraphSize)
-#v1,v2,sickness,SINR,edgeLength,MRC 
-g.addEdge(0, 1, 1, 2, 5, 4)
-g.addEdge(0, 2, 4, 5, 5, 2)
-g.addEdge(1, 2, 3, 3, 5, 3)
-g.addEdge(1, 3, 2, 6, 5, 4)
-g.addEdge(1, 4, 2, 2, 5, 5)
-g.addEdge(2, 3, 3, 0.5, 5, 6)
-#g.addEdge(3, 1, 1, 3, 5)
-g.addEdge(3, 4, 3, 1, 5, 8)
-g.addEdge(0, 4, 10, 8, 5, 0)
-g.M={'0': (10,2,3,4,5),'1': (2,10,6,5,4),'2': (1,4,10,6,4),'3': (2,2,4,10,3),'4': (1,3,3,5,10)}
-g.Obstacle=random.sample(range(1,GraphSize-1),NumberofObstacle)
-g.fundamentalAlgo(0,4)
+# GraphSize=5
+# NumberofObstacle=0
+# AdaptionSpeed=0
+# Lambda=2
+# g = GraphIRSandRW(GraphSize)
+# #v1,v2,sickness,SINR,edgeLength,MRC 
+# g.addEdge(0, 1, 1, 2, 5, 4)
+# g.addEdge(0, 2, 4, 5, 5, 2)
+# g.addEdge(1, 2, 3, 3, 5, 3)
+# g.addEdge(1, 3, 2, 6, 5, 4)
+# g.addEdge(1, 4, 2, 2, 5, 5)
+# g.addEdge(2, 3, 3, 0.5, 5, 6)
+# #g.addEdge(3, 1, 1, 3, 5)
+# g.addEdge(3, 4, 3, 1, 5, 8)
+# g.addEdge(0, 4, 10, 8, 5, 0)
+# g.M={'0': (10,2,3,4,5),'1': (2,10,6,5,4),'2': (1,4,10,6,4),'3': (2,2,4,10,3),'4': (1,3,3,5,10)}
+# g.Obstacle=random.sample(range(1,GraphSize-1),NumberofObstacle)
+#g.IRSandRW(0,4)
 test_rho=np.zeros(5)
 test=np.array([[1.234, 2.345, 4.543],[0.34, 12.545, -4.543]])
 test=np.zeros((5,5))
