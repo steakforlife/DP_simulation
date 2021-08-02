@@ -3,7 +3,7 @@ import setting
 from math import cos
 import networkx as nx
 import numpy as np
-from numpy.core.numeric import NaN
+from numpy.core.numeric import Inf, NaN
 import random
 #Input parameter
 
@@ -27,8 +27,7 @@ class GraphMy:
     #remove the edge bump into obstacle
     def obstacleAvoidance(self,Obstacle):
         for i in Obstacle:
-            self.graph=[[v1,v2,sickness,SINR,edgeLength,MRC] for v1,v2,sickness,SINR,edgeLength,MRC\
-                in self.graph if(v1!=i and v2!=i)]
+            self.graph=[[v1,v2,sickness,SINR,edgeLength,MRC] for v1,v2,sickness,SINR,edgeLength,MRC in self.graph if(v1!=i and v2!=i)]
 
     #remove the edge which exceed MRC upper bound
     def upperbound(self,UpperBoundMRC):
@@ -81,9 +80,11 @@ class GraphMy:
         self.obstacleAvoidance(self.Obstacle)
         self.upperbound(setting.UpperBoundMRC)
         #
+        #edgeNumber=0
         #print("Lambda=",setting.Lambda)
         for _ in range(self.V-1):
             for v1,v2,sickness,SINR,edgeLength,MRC in self.graph:
+                #edgeNumber+=1
                 #from 0 to v1
                 for x in range(v1+1):
                     if (costFunction[v1][x]+sickness+\
@@ -127,33 +128,36 @@ class GraphMy:
                 
                 rho[v2]=np.argmin(costFunction[v2],axis=0)
                 if(rho[v2]==v2):
+                    #print("v2=",v2)
+                    #print("rho[{0}]= ".format(v2),rho[v2])
+                    #print("rhoLast= ",rhoLast)
                     if(rhoLast==-1):
                         #=========================update IRS==============================================
                         self.SINR_mapping_my(int(rho[v2]))
                         AccumulatedSINR[v2]=AccumulatedSINR[v1]+self.M[str(v2)][v2]
-                        #print("SINR[{0}]= ".format(v2),AccumulatedSINR[v2])
                         rhoLast+=1
-                    elif(rho[v2]-rhoLast>setting.Lambda):
+                    elif(rho[v2]-rhoLast>setting.Lambda and AccumulatedSINR[v1]!=float("Inf")):
                         #=========================update IRS==============================================
                         self.SINR_mapping_my(int(rho[v2]))
                         #print("SINR= ",SINR)
                         #AccumulatedSINR[v2]=AccumulatedSINR[v1]+SINR
                         AccumulatedSINR[v2]=AccumulatedSINR[v1]+self.M[str(v2)][v2]
                         #print("SINR[{0}]= ".format(v2),AccumulatedSINR[v2])
-                        rhoLast+=1
+                        rhoLast=v2
+                    #print(rhoLast)
                 #costFunction[v2][int(rho[v2])]=min(costFunction[v2])
 
         #self.printArr(Qfunction)
-        self.printPath(Parent,src,dst)
-        print("costfunction[{0}][{1}]: ".format(dst,int(rho[dst])),costFunction[dst][int(rho[dst])])
-        # for i in range(dst+1):
-        #     print(rho[i])
-        # for i in range(dst+1):
-        #     print("Parent[{0}]= {1}".format(i,Parent[i]))
-        print("Qfunction: ",Qfunction[dst][int(rho[dst])])
-        print("TotalPathlength: ",PathLength[dst])
-        print("RET magnitude: ",RETmagnitude[dst])
-        print("Accumulated SINR: ",AccumulatedSINR[dst])
+        # self.printPath(Parent,src,dst)
+        # print("costfunction[{0}][{1}]: ".format(dst,int(rho[dst])),costFunction[dst][int(rho[dst])])
+        # # for i in range(dst+1):
+        # #     print(rho[i])
+        # # for i in range(dst+1):
+        # #     print("Parent[{0}]= {1}".format(i,Parent[i]))
+        # print("Qfunction: ",Qfunction[dst][int(rho[dst])])
+        # print("TotalPathlength: ",PathLength[dst])
+        # print("RET magnitude: ",RETmagnitude[dst])
+        # print("Accumulated SINR: ",AccumulatedSINR[dst])
 
         #======for plot==================================
         setting.CostMy.append(costFunction[dst][int(rho[dst])])
@@ -175,6 +179,9 @@ class GraphMy:
         print("============================================================")
         print("the path* is: {0} ".format(pi),end='')
         while(pi!=src):
+            if(parent[pi]==None):
+                print("no optimal path")
+                return
             print("{0} ".format(parent[pi]),end='')
             pi=parent[pi]
             count+=1
