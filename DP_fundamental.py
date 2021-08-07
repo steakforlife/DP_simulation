@@ -1,4 +1,5 @@
 #SINR_mapping
+from pathlib import Path
 import setting
 from math import cos
 import networkx as nx
@@ -74,8 +75,10 @@ class GraphMy:
         #Distance=D
         rho=np.zeros(self.V)
         rhoLast=-1
+        firstIRS=False
         Parent={}
-        Parent[src]=-1
+        for i in range(self.V):
+            Parent[i]=-1
         #
         self.obstacleAvoidance(self.Obstacle)
         self.upperbound(setting.UpperBoundMRC)
@@ -86,44 +89,76 @@ class GraphMy:
             for v1,v2,sickness,SINR,edgeLength,MRC in self.graph:
                 #edgeNumber+=1
                 #from 0 to v1
-                for x in range(v1+1):
-                    if (costFunction[v1][x]+sickness+\
+                #for x in range(0,i):
+                x=v1
+                while (x!=-1):
+                    #print(x)
+                    #find min cost under no IRS adjustment
+                    if (costFunction[v1][x]+(sickness)*setting.alleviation+\
                     self.penalty(v2,x,setting.SINR_Constraint)<costFunction[v2][x]):
                         # print("(v1,v2): ",v1,v2)
                         # print("x: ",x)
-                        costFunction[v2][x]=costFunction[v1][x]+sickness+\
+                        costFunction[v2][x]=costFunction[v1][x]+(sickness)*setting.alleviation+\
                         self.penalty(v2,x,setting.SINR_Constraint)-setting.AdaptionSpeed
                         # print("costfunction[{0}][{1}]= ".format(v2,x),costFunction[v2][x])
                         if(costFunction[v2][x]==min(costFunction[v2][:])):
                             Parent[v2]=v1
-                            Qfunction[v2]=Qfunction[v1]+sickness-setting.AdaptionSpeed
+                            Qfunction[v2]=Qfunction[v1]+(sickness)*setting.alleviation-setting.AdaptionSpeed
+                            PathLength[v2]=PathLength[v1]+edgeLength
+                            RETmagnitude[v2]=RETmagnitude[v1]+MRC*setting.alleviation
+                            AccumulatedSINR[v2]=AccumulatedSINR[v1]+SINR
+                    x=Parent[x]
+                    #print("v1,x= ",v1,x)
+                #from 0 to j-lambda     
+                lastAdjust=Parent[v2]
+                #print("Parent[{0}],v2=".format(v2), Parent[v2])
+                if(firstIRS==False):
+                    while(lastAdjust!=-1):
+                        if(costFunction[v1][lastAdjust]+(sickness)*setting.alleviation<costFunction[v2][v2]):
+                            costFunction[v2][v2]=costFunction[v1][lastAdjust]+(sickness)*setting.alleviation-setting.AdaptionSpeed
+                            #lastAdjust=Parent[lastAdjust]
+                            firstIRS=True
+                            #if(costFunction[v2][v2]==min(costFunction[v2][:])):
+                            Parent[v2]=v1
+                            Qfunction[v2]=Qfunction[v1]+(sickness)*setting.alleviation-setting.AdaptionSpeed
                             PathLength[v2]=PathLength[v1]+edgeLength
                             RETmagnitude[v2]=RETmagnitude[v1]+MRC
-                            AccumulatedSINR[v2]=AccumulatedSINR[v1]+SINR
-                #from 0 to i+1-lamda 
-                if(v2-setting.Lambda<0):
-                    for i in range(v2):
-                        if(costFunction[v1][i]+sickness<costFunction[v2][v2]):
-                            #print("(v1,i): ",v1,i)
-                            costFunction[v2][v2]=costFunction[v1][i]+sickness-setting.AdaptionSpeed
-                            if(costFunction[v2][v2]==min(costFunction[v2][:])):
-                                Parent[v2]=v1
-                                Qfunction[v2]=Qfunction[v1]+sickness-setting.AdaptionSpeed
-                                PathLength[v2]=PathLength[v1]+edgeLength
-                                RETmagnitude[v2]=RETmagnitude[v1]+MRC
+                        lastAdjust=Parent[lastAdjust]
+                        #print("lastAdjust= ",lastAdjust)
+                # if(v2-setting.Lambda<0):
+                #     for i in range(v2):
+                #         if(costFunction[v1][i]+sickness<costFunction[v2][v2]):
+                #             #print("(v1,i): ",v1,i)
+                #             costFunction[v2][v2]=costFunction[v1][i]+sickness-setting.AdaptionSpeed
+                #             if(costFunction[v2][v2]==min(costFunction[v2][:])):
+                #                 Parent[v2]=v1
+                #                 Qfunction[v2]=Qfunction[v1]+sickness-setting.AdaptionSpeed
+                #                 PathLength[v2]=PathLength[v1]+edgeLength
+                #                 RETmagnitude[v2]=RETmagnitude[v1]+MRC
                             #print("costfunction[{0}][{1}]: ".format(v2,v2),costFunction[v2][v2])
                 else:
-                    for i in range(1+v1+1-setting.Lambda):
-                        # if(costFunction[v1][i]+sickness<costFunction[v2][v1+1]):
-                        #     costFunction[v2][v1+1]=costFunction[v1][i]+sickness-AdaptionSpeed
-                        if(costFunction[v1][i]+sickness<costFunction[v2][v2]):
+                    lastAdjust=Parent[v2]
+                    for _ in range(setting.Lambda):
+                        lastAdjust=Parent[v2]
+                        if (lastAdjust==src):
+                            break
+                    #print("lastAdjust= ",lastAdjust)
+                    #how to represent gap with lambda
+                    while(lastAdjust!=-1 and lastAdjust!=0 ):
+                    #for i in range(1+v1+1-setting.Lambda):
+                        if(costFunction[v1][lastAdjust]+(sickness)*setting.alleviation<costFunction[v2][v2]):
+                        #if(costFunction[v1][i]+sickness<costFunction[v2][v2]):
                             #print("(v1,i): ",v1,i)
-                            costFunction[v2][v2]=costFunction[v1][i]+sickness-setting.AdaptionSpeed
-                            if(costFunction[v2][v2]==min(costFunction[v2][:])):
+                            costFunction[v2][v2]=costFunction[v1][lastAdjust]+(sickness)*setting.alleviation-setting.AdaptionSpeed
+                            print(lastAdjust)
+                            #costFunction[v2][v2]=costFunction[v1][i]+sickness-setting.AdaptionSpeed
+                            if(costFunction[v2][lastAdjust]==min(costFunction[v2][:])):
                                 Parent[v2]=v1
-                                Qfunction[v2]=Qfunction[v1]+sickness-setting.AdaptionSpeed
+                                Qfunction[v2]=Qfunction[v1]+(sickness)*setting.alleviation-setting.AdaptionSpeed
                                 PathLength[v2]=PathLength[v1]+edgeLength
-                                RETmagnitude[v2]=RETmagnitude[v1]+MRC
+                                RETmagnitude[v2]=RETmagnitude[v1]+MRC*setting.alleviation
+                        lastAdjust=Parent[lastAdjust]
+                        #print("lastAdjust= ",lastAdjust)
                             #print("costfunction[{0}][{1}]: ".format(v2,v2),costFunction[v2][v2])
                 
                 rho[v2]=np.argmin(costFunction[v2],axis=0)
@@ -131,33 +166,24 @@ class GraphMy:
                     #print("v2=",v2)
                     #print("rho[{0}]= ".format(v2),rho[v2])
                     #print("rhoLast= ",rhoLast)
-                    if(rhoLast==-1):
-                        #=========================update IRS==============================================
-                        self.SINR_mapping_my(int(rho[v2]))
-                        AccumulatedSINR[v2]=AccumulatedSINR[v1]+self.M[str(v2)][v2]
-                        rhoLast+=1
-                    elif(rho[v2]-rhoLast>setting.Lambda and AccumulatedSINR[v1]!=float("Inf")):
-                        #=========================update IRS==============================================
-                        self.SINR_mapping_my(int(rho[v2]))
-                        #print("SINR= ",SINR)
-                        #AccumulatedSINR[v2]=AccumulatedSINR[v1]+SINR
-                        AccumulatedSINR[v2]=AccumulatedSINR[v1]+self.M[str(v2)][v2]
-                        #print("SINR[{0}]= ".format(v2),AccumulatedSINR[v2])
-                        rhoLast=v2
+                    #=========================update IRS==============================================
+                    self.SINR_mapping_my(int(rho[v2]))
+                    AccumulatedSINR[v2]=AccumulatedSINR[v1]+self.M[str(v2)][v2]
+
                     #print(rhoLast)
                 #costFunction[v2][int(rho[v2])]=min(costFunction[v2])
 
         #self.printArr(Qfunction)
-        # self.printPath(Parent,src,dst)
-        # print("costfunction[{0}][{1}]: ".format(dst,int(rho[dst])),costFunction[dst][int(rho[dst])])
+        #self.printPath(Parent,src,dst)
+        print("costfunction[{0}][{1}]: ".format(dst,int(rho[dst])),costFunction[dst][int(rho[dst])])
         # # for i in range(dst+1):
         # #     print(rho[i])
         # # for i in range(dst+1):
         # #     print("Parent[{0}]= {1}".format(i,Parent[i]))
-        # print("Qfunction: ",Qfunction[dst][int(rho[dst])])
-        # print("TotalPathlength: ",PathLength[dst])
-        # print("RET magnitude: ",RETmagnitude[dst])
-        # print("Accumulated SINR: ",AccumulatedSINR[dst])
+        #print("Qfunction: ",Qfunction[dst][int(rho[dst])])
+        #print("TotalPathlength: ",PathLength[dst])
+        #print("RET magnitude: ",RETmagnitude[dst])
+        #print("Accumulated SINR: ",AccumulatedSINR[dst])
 
         #======for plot==================================
         setting.CostMy.append(costFunction[dst][int(rho[dst])])
@@ -178,6 +204,7 @@ class GraphMy:
         count=0
         print("============================================================")
         print("the path* is: {0} ".format(pi),end='')
+        #print(parent[pi])
         while(pi!=src):
             if(parent[pi]==None):
                 print("no optimal path")
